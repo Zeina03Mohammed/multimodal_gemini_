@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+google-genai==2.24.0
+pydantic==2.13.5
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+python-multipart==0.0.20
+chromadb==1.5.9
+pypdf==6.19.0
