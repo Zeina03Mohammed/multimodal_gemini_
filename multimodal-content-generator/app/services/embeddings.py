@@ -21,15 +21,23 @@ _client = genai.Client(api_key=settings.gemini_api_key)
 
 _EMBEDDING_MODEL = "gemini-embedding-001"
 
+# Gemini's BatchEmbedContents endpoint rejects requests with more than 100
+# contents, so larger inputs must be split into batches of at most this size.
+_MAX_BATCH_SIZE = 100
+
 
 def _embed(contents: list[str], task_type: str) -> list[list[float]]:
     try:
-        response = _client.models.embed_content(
-            model=_EMBEDDING_MODEL,
-            contents=contents,
-            config=types.EmbedContentConfig(task_type=task_type),
-        )
-        return [e.values for e in response.embeddings]
+        embeddings: list[list[float]] = []
+        for i in range(0, len(contents), _MAX_BATCH_SIZE):
+            batch = contents[i : i + _MAX_BATCH_SIZE]
+            response = _client.models.embed_content(
+                model=_EMBEDDING_MODEL,
+                contents=batch,
+                config=types.EmbedContentConfig(task_type=task_type),
+            )
+            embeddings.extend(e.values for e in response.embeddings)
+        return embeddings
 
     # Same error-handling shape as gemini_client.generate_text - the router
     # layer only knows how to turn a RuntimeError into an HTTP response.

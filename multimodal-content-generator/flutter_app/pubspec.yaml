@@ -35,11 +35,17 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
-  # For calling the backend's /generate and /rag HTTP endpoints.
+  # For calling the backend's /chat and /rag HTTP endpoints.
   http: ^1.2.2
 
   # For picking a file to upload to /rag/documents (works on web, desktop, mobile).
   file_picker: ^8.1.7
+
+  # For drag-and-drop file uploads onto the chat window (desktop + web).
+  desktop_drop: ^0.8.4
+
+  # For remembering the user's light/dark theme choice across restarts.
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

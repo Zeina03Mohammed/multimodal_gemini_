@@ -10,11 +10,15 @@ request - uvicorn is what makes it reachable at all.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import generate, rag
+from app.routers import chat, generate, rag
 
 app = FastAPI(
     title="Multimodal Content Generator",
-    description="Generate text, ground it with your own documents (RAG), and (soon) understand images/audio.",
+    description=(
+        "A chat that decides for itself whether to answer directly, search your "
+        "uploaded documents (RAG), or generate an image - plus standalone "
+        "text-generation and document endpoints."
+    ),
     version="0.1.0",
 )
 
@@ -29,6 +33,7 @@ app.add_middleware(
 )
 
 # Plug each router's endpoints into the main app.
+app.include_router(chat.router)
 app.include_router(generate.router)
 app.include_router(rag.router)
 

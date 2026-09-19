@@ -39,6 +39,10 @@ class DocumentUploadResponse(DocumentInfo):
 class RagQueryRequest(BaseModel):
     question: str = Field(..., min_length=1, description="Question to answer using your uploaded documents")
     top_k: int = Field(default=4, ge=1, le=20, description="How many chunks to retrieve as context")
+    as_image: bool = Field(
+        default=False,
+        description="If true, generate an image grounded in the retrieved context instead of a text answer",
+    )
 
 
 class RagSource(BaseModel):
@@ -48,5 +52,35 @@ class RagSource(BaseModel):
 
 
 class RagQueryResponse(BaseModel):
-    answer: str
+    answer: str | None = None
+    image_base64: str | None = Field(default=None, description="Base64-encoded image, present only when as_image was true")
+    image_mime_type: str | None = None
     sources: list[RagSource]
+
+
+class ChatMessage(BaseModel):
+    role: str = Field(description="'user' or 'model'")
+    text: str | None = None
+    image_base64: str | None = None
+    image_mime_type: str | None = None
+    sources: list[RagSource] = Field(default_factory=list)
+    created_at: str | None = None
+
+
+class ConversationSummary(BaseModel):
+    conversation_id: str
+    title: str
+    created_at: str
+
+
+class ConversationDetail(ConversationSummary):
+    messages: list[ChatMessage]
+
+
+class ChatSendRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+
+
+class ChatSendResponse(BaseModel):
+    conversation_id: str
+    message: ChatMessage

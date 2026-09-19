@@ -12,6 +12,7 @@ Pipeline:
     query   -> embed question -> retrieve top-k similar chunks -> ask Gemini
 """
 
+import base64
 import io
 
 from fastapi import APIRouter, HTTPException, UploadFile
@@ -76,6 +77,11 @@ _RAG_SYSTEM_PROMPT = (
     "If the context doesn't contain the answer, say so plainly instead of guessing."
 )
 
+_RAG_IMAGE_INSTRUCTION = (
+    "Using ONLY the following context excerpts, generate an image for this request. "
+    "Ground the visual details (subjects, numbers, layout, wording) in the context.\n\n"
+)
+
 
 @router.post("/query", response_model=RagQueryResponse)
 def query(request: RagQueryRequest) -> RagQueryResponse:
@@ -90,8 +96,22 @@ def query(request: RagQueryRequest) -> RagQueryResponse:
         raise HTTPException(status_code=400, detail="No documents have been uploaded yet.")
 
     context = "\n\n---\n\n".join(f"[{m['filename']}]\n{m['text']}" for m in matches)
-    prompt = f"Context:\n{context}\n\nQuestion: {request.question}"
+    sources = [RagSource(filename=m["filename"], text=m["text"], distance=m["distance"]) for m in matches]
 
+    if request.as_image:
+        prompt = f"{_RAG_IMAGE_INSTRUCTION}Context:\n{context}\n\nRequest: {request.question}"
+        try:
+            image_bytes, mime_type = gemini_client.generate_image(prompt)
+        except RuntimeError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+
+        return RagQueryResponse(
+            image_base64=base64.b64encode(image_bytes).decode("ascii"),
+            image_mime_type=mime_type,
+            sources=sources,
+        )
+
+    prompt = f"Context:\n{context}\n\nQuestion: {request.question}"
     try:
         response = gemini_client.generate_text(prompt=prompt, system=_RAG_SYSTEM_PROMPT)
     except RuntimeError as e:
@@ -99,5 +119,5 @@ def query(request: RagQueryRequest) -> RagQueryResponse:
 
     return RagQueryResponse(
         answer=gemini_client.extract_text(response),
-        sources=[RagSource(filename=m["filename"], text=m["text"], distance=m["distance"]) for m in matches],
+        sources=sources,
     )

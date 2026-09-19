@@ -18,7 +18,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     gemini_api_key: str
     gemini_model: str = "gemini-3.6-flash"
+    gemini_image_model: str = "gemini-2.5-flash-image"
     chroma_db_path: str = "data/chroma_db"
+    chat_db_path: str = "data/chat.db"
 
     # Tells pydantic-settings: "load values from a file named .env,
     # and match field names case-insensitively to env var names."
